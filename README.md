@@ -66,4 +66,3 @@
 2. Chromeブラウザのアドレスバーに `chrome://extensions/` と入力
 3. 右上の「デベロッパーモード」をONにする
 4. 「パッケージ化されていない拡張機能を読み込む」をクリックし、解凍したフォルダを選択
-<img width="1056" height="2363" alt="image" src="https://github.com/user-attachments/assets/7c390907-8d50-4e1b-9ddd-aa0fd4a01b13" />
