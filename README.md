@@ -40,7 +40,7 @@ https://github.com/SKYMY-Workshop/Deep_Focus_Shield_-SK-/releases
 
 ## インストール方法
 
-1. このリポジトリをダウンロード（Code -> Download ZIP）して解凍
+1. このリポジトリをダウンロード（Assets -> Source code(zip)をダウンロード）して解凍
 2. Chromeブラウザのアドレスバーに `chrome://extensions/` と入力
 3. 右上の「デベロッパーモード」をONにする
 4. 「パッケージ化されていない拡張機能を読み込む」をクリックし、解凍したフォルダを選択
