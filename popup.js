@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
     hideShorts: true,
     redirectHome: true,
     hideRelated: true,
+    hideEndScreen: true, // 新機能
     hideComments: true
   },
   twitter: {
@@ -51,6 +52,8 @@ async function loadSettings() {
     document.getElementById('youtube-hide-shorts').checked = currentSettings.youtube.hideShorts;
     document.getElementById('youtube-redirect-home').checked = currentSettings.youtube.redirectHome;
     document.getElementById('youtube-hide-related').checked = currentSettings.youtube.hideRelated;
+    // 新機能の設定読み込み（未設定の場合はデフォルトでON）
+    document.getElementById('youtube-hide-endscreen').checked = currentSettings.youtube.hideEndScreen ?? true;
     document.getElementById('youtube-hide-comments').checked = currentSettings.youtube?.hideComments ?? true;
     
     // Twitter設定を適用
@@ -154,6 +157,8 @@ async function saveSettings() {
         hideShorts: document.getElementById('youtube-hide-shorts').checked,
         redirectHome: document.getElementById('youtube-redirect-home').checked,
         hideRelated: document.getElementById('youtube-hide-related').checked,
+        // 新機能の保存処理
+        hideEndScreen: document.getElementById('youtube-hide-endscreen').checked,
         hideComments: document.getElementById('youtube-hide-comments').checked
       },
       twitter: {
