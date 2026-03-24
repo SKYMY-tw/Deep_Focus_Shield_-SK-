@@ -25,7 +25,6 @@ async function loadSettings() {
         defaultFollowing: true,
         hideRecommendations: false,
         hideTrends: true,
-        stopAutoplay: false
       }
     };
     applyRestrictions();
@@ -147,11 +146,6 @@ function applyRestrictions() {
     hideTrends();
   } else {
     document.body.classList.remove('acis-twitter-trends-hidden');
-  }
-  
-  // 自動再生を停止（制限時間内のみ）
-  if (settings.twitter.stopAutoplay) {
-    stopAutoplay();
   }
   
   // DOMの変更を監視
@@ -289,63 +283,6 @@ function hideTrends() {
   });
 }
 
-// 自動再生を停止
-function stopAutoplay() {
-  // 未処理の動画要素のみ対象にする
-  const videos = document.querySelectorAll('video:not([data-autoplay-blocked])');
-  if (videos.length === 0) return;
-
-  videos.forEach(video => {
-    video.removeAttribute('autoplay');
-    video.setAttribute('data-autoplay-blocked', 'true');
-
-    // Observer内でpause()するとDOM変更→再発火のループになるため、
-    // isProcessingフラグでObserverコールバックを抑制する
-    isProcessing = true;
-    if (!video.paused && !video.hasAttribute('data-manual-play')) {
-      video.pause();
-    }
-    isProcessing = false;
-
-    // playイベントリスナー（自動再生をブロック）
-    const handlePlay = () => {
-      if (!video.hasAttribute('data-manual-play')) {
-        isProcessing = true;
-        video.pause();
-        isProcessing = false;
-      }
-    };
-
-    video.addEventListener('play', handlePlay);
-
-    // クリックイベントで手動再生を許可
-    const enableManualPlay = () => {
-      video.setAttribute('data-manual-play', 'true');
-      video.removeEventListener('play', handlePlay);
-      setTimeout(() => {
-        video.play().catch(() => {});
-      }, 50);
-    };
-
-    video.addEventListener('click', enableManualPlay, { once: true });
-
-    // 再生ボタンのクリックも検出
-    const videoContainer = video.closest('[data-testid="videoPlayer"], [data-testid="videoComponent"], article');
-    if (videoContainer) {
-      const playButtons = videoContainer.querySelectorAll('[aria-label*="Play"], [aria-label*="再生"], [role="button"]');
-      playButtons.forEach(button => {
-        button.addEventListener('click', enableManualPlay, { once: true });
-      });
-
-      videoContainer.addEventListener('click', (e) => {
-        if (e.target === video || video.contains(e.target) || e.target.closest('[data-testid*="video"]')) {
-          enableManualPlay();
-        }
-      }, { once: true });
-    }
-  });
-}
-
 // デバウンス付きでDOM変更に対応する処理
 function handleDomChanges() {
   if (settings.twitter?.defaultFollowing !== false) {
@@ -356,9 +293,6 @@ function handleDomChanges() {
   }
   if (settings.twitter.hideTrends) {
     hideTrends();
-  }
-  if (settings.twitter.stopAutoplay) {
-    stopAutoplay();
   }
 }
 

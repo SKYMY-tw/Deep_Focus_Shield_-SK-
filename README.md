@@ -22,8 +22,6 @@
 - ✅ デフォルトのTLを「フォロー中」に変更
 - ✅ おすすめ（For you）タブの非表示
 - ✅ トレンドの非表示（デフォルトON）
-- ✅ 動画の自動再生停止
-
 ### TikTok
 - ✅ サイト全体をブロック（デフォルトON）
 
@@ -81,6 +79,11 @@ https://github.com/SKYMY-Workshop/Deep_Focus_Shield_-SK-/issues
   - YouTube側のObserverが制限解除後も動き続ける問題を修正
   - background.jsの時間帯判定でプラットフォーム固有のtimeSlots設定が無視されていたバグを修正
   - CSSの無効なセレクタ（`:has-text()` 等）を削除・修正
+- v1.0.6 X(Twitter)の動画が表示できない不具合を修正・機能整理
+  - v1.0.5で無効なCSS（`:has-text()`）を削除した際に、広範囲なセレクタ（`[aria-label*="Live"]`等）が意図せず有効化され、動画プレイヤーが非表示になっていた問題を修正
+  - 動画の自動再生停止機能を削除
+  - 広告非表示の過剰なCSSルールを削除
+
 ## 📜 License
 
 MIT License. 詳細は [LICENSE](./LICENSE) を参照してください。

@@ -22,7 +22,6 @@ const DEFAULT_SETTINGS = {
     defaultFollowing: true,
     hideRecommendations: false,
     hideTrends: true,
-    stopAutoplay: false
   },
   tiktok: {
     block: true
@@ -61,8 +60,6 @@ async function loadSettings() {
     document.getElementById('twitter-default-following').checked = currentSettings.twitter?.defaultFollowing ?? true;
     document.getElementById('twitter-hide-recommendations').checked = currentSettings.twitter.hideRecommendations;
     document.getElementById('twitter-hide-trends').checked = currentSettings.twitter.hideTrends;
-    document.getElementById('twitter-stop-autoplay').checked = currentSettings.twitter.stopAutoplay;
-    
     // TikTok設定を適用
     document.getElementById('tiktok-block').checked = currentSettings.tiktok.block;
     
@@ -168,7 +165,6 @@ async function saveSettings() {
         defaultFollowing: document.getElementById('twitter-default-following').checked,
         hideRecommendations: document.getElementById('twitter-hide-recommendations').checked,
         hideTrends: document.getElementById('twitter-hide-trends').checked,
-        stopAutoplay: document.getElementById('twitter-stop-autoplay').checked
       },
       tiktok: {
         block: document.getElementById('tiktok-block').checked

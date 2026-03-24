@@ -29,7 +29,6 @@ const DEFAULT_SETTINGS = {
     timeSlots: [{start: '07:00', end: '12:00'}],
     hideRecommendations: false,
     hideTrends: true,
-    stopAutoplay: false
   },
   tiktok: {
     block: true

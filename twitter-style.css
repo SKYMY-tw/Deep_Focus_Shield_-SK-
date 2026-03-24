@@ -50,13 +50,6 @@ body.acis-twitter-trends-hidden {
   }
 }
 
-/* 自動再生停止のための視覚的フィードバック */
-/* 注: video要素は置換要素のため::before疑似要素は使用不可。
-   親コンテナにオーバーレイを表示する */
-body.acis-twitter-active video {
-  cursor: pointer !important;
-}
-
 /* 全体的な調整 */
 body.acis-twitter-active {
   /* 不要な要素を非表示 */
@@ -65,13 +58,8 @@ body.acis-twitter-active {
     display: none !important;
   }
   
-  /* Spaces */
-  [aria-label*="Spaces"] {
-    display: none !important;
-  }
-
-  /* Live */
-  [aria-label*="Live"] {
+  /* Spaces（サイドバー内のみ） */
+  [data-testid="sidebarColumn"] [aria-label*="Spaces"] {
     display: none !important;
   }
 }
@@ -93,10 +81,6 @@ body.acis-twitter-active {
   }
 }
 
-/* 広告を非表示 */
-body.acis-twitter-active div[data-testid="placementTracking"] {
-  display: none !important;
-}
 
 /* Fleetを非表示 (もし存在する場合) */
 body.acis-twitter-active {
