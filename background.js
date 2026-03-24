@@ -196,29 +196,34 @@ function shouldApplyRestrictions(platform) {
   const currentDay = now.getDay();
   const currentTime = now.getHours() * 60 + now.getMinutes();
   
-  // 共通の時間制限をチェック
-  if (currentSettings.common?.activeDays && currentSettings.common.activeDays.includes(currentDay)) {
-    if (currentSettings.common?.timeSlots && currentSettings.common.timeSlots.length > 0) {
-      for (const slot of currentSettings.common.timeSlots) {
-        const [startHour, startMinute] = slot.start.split(':').map(Number);
-        const [endHour, endMinute] = slot.end.split(':').map(Number);
-        const startTimeMinutes = startHour * 60 + startMinute;
-        const endTimeMinutes = endHour * 60 + endMinute;
-        
-        // 時間範囲内かチェック
-        if (endTimeMinutes > startTimeMinutes) {
-          if (currentTime >= startTimeMinutes && currentTime <= endTimeMinutes) {
-            return true;
-          }
-        } else {
-          if (currentTime >= startTimeMinutes || currentTime <= endTimeMinutes) {
-            return true;
-          }
-        }
+  // 時間範囲チェックのヘルパー
+  function isInTimeSlots(activeDays, timeSlots) {
+    if (!activeDays?.includes(currentDay)) return false;
+    for (const slot of (timeSlots || [])) {
+      const [startHour, startMinute] = slot.start.split(':').map(Number);
+      const [endHour, endMinute] = slot.end.split(':').map(Number);
+      const startTimeMinutes = startHour * 60 + startMinute;
+      const endTimeMinutes = endHour * 60 + endMinute;
+
+      if (endTimeMinutes > startTimeMinutes) {
+        if (currentTime >= startTimeMinutes && currentTime <= endTimeMinutes) return true;
+      } else {
+        if (currentTime >= startTimeMinutes || currentTime <= endTimeMinutes) return true;
       }
     }
+    return false;
   }
-  
+
+  // 共通の時間制限をチェック
+  if (isInTimeSlots(currentSettings.common?.activeDays, currentSettings.common?.timeSlots)) {
+    return true;
+  }
+
+  // プラットフォーム固有の時間制限をチェック
+  if (isInTimeSlots(settings.activeDays, settings.timeSlots)) {
+    return true;
+  }
+
   return false;
 }
 

@@ -71,6 +71,16 @@ https://github.com/SKYMY-Workshop/Deep_Focus_Shield_-SK-/issues
 - v1.0.0-beta 初回プレリリース
 - v1.0.3 再生終了画面の関連動画を非表示にする機能を追加
 - v1.0.4 右下に表示されるミニプレイヤーの非表示機能を追加（自動再生された途中の映画が何度も表示され、邪魔な人向け）
+- v1.0.5 パフォーマンス改善・バグ修正
+  - Twitter/Xで動画があるページを閲覧中にフリーズする問題を修正
+    - MutationObserverにデバウンス処理（200ms）を追加し、コールバックの過剰な発火を抑制
+    - `stopAutoplay()` 内の `video.pause()` がObserverを再発火させる無限ループを修正
+    - 2つあったMutationObserverを1つに統合（SPAナビゲーション検出を統合）
+    - 処理済み動画の再走査をスキップするよう最適化
+  - YouTubeでも同様のMutationObserverにデバウンス処理を追加
+  - YouTube側のObserverが制限解除後も動き続ける問題を修正
+  - background.jsの時間帯判定でプラットフォーム固有のtimeSlots設定が無視されていたバグを修正
+  - CSSの無効なセレクタ（`:has-text()` 等）を削除・修正
 ## 📜 License
 
 MIT License. 詳細は [LICENSE](./LICENSE) を参照してください。

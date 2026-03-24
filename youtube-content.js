@@ -1,6 +1,8 @@
 // YouTube Content Script (Overlay Strategy)
 
 let settings = null;
+let observer = null;
+let debounceTimer = null;
 
 // デフォルト設定
 const DEFAULT_SETTINGS = {
@@ -89,7 +91,7 @@ function shouldApplyRestrictions() {
 // 制限を適用
 function applyRestrictions() {
   const isRestricted = shouldApplyRestrictions();
-  
+
   // クラスの着脱処理
   if (!isRestricted) {
     document.body.classList.remove(
@@ -101,6 +103,11 @@ function applyRestrictions() {
       'acis-youtube-miniplayer-hidden',
       'acis-grayscale'
     );
+    // 制限解除時はObserverを停止
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
     return;
   }
   
@@ -118,6 +125,11 @@ function applyRestrictions() {
   if (settings.youtube.hideShorts) hideShorts();
   if (settings.youtube.hideRelated) hideRelatedVideos();
   if (settings.youtube.hideComments) hideComments();
+
+  // DOMの変更を監視
+  if (!observer) {
+    startObserver();
+  }
 }
 
 // ヘルパー関数: クラスの切り替え
@@ -163,19 +175,29 @@ function hideComments() {
   commentElements.forEach(el => el.style.display = 'none');
 }
 
-// 監視の設定
-const observer = new MutationObserver(() => {
-  if (settings) applyRestrictions();
-});
+// DOMの変更を監視（デバウンス付き）
+function startObserver() {
+  observer = new MutationObserver(() => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      if (settings) {
+        if (settings.youtube.hideShorts) hideShorts();
+        if (settings.youtube.hideRelated) hideRelatedVideos();
+        if (settings.youtube.hideComments) hideComments();
+      }
+    }, 200);
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    loadSettings();
-    observer.observe(document.body, { childList: true, subtree: true });
-  });
+  document.addEventListener('DOMContentLoaded', loadSettings);
 } else {
   loadSettings();
-  observer.observe(document.body, { childList: true, subtree: true });
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

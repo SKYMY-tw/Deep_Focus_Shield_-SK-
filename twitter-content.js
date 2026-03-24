@@ -2,6 +2,8 @@
 
 let settings = null;
 let observer = null;
+let debounceTimer = null;
+let isProcessing = false;
 
 // 設定を読み込む
 async function loadSettings() {
@@ -289,85 +291,102 @@ function hideTrends() {
 
 // 自動再生を停止
 function stopAutoplay() {
-  // 動画要素を探して自動再生のみ無効化
-  const videos = document.querySelectorAll('video');
+  // 未処理の動画要素のみ対象にする
+  const videos = document.querySelectorAll('video:not([data-autoplay-blocked])');
+  if (videos.length === 0) return;
+
   videos.forEach(video => {
-    // 自動再生属性を削除
     video.removeAttribute('autoplay');
-    
-    // 手動再生フラグが設定されていない場合のみ停止
-    if (!video.hasAttribute('data-manual-play')) {
-      // 既に再生中の動画を一時停止
-      if (!video.paused) {
+    video.setAttribute('data-autoplay-blocked', 'true');
+
+    // Observer内でpause()するとDOM変更→再発火のループになるため、
+    // isProcessingフラグでObserverコールバックを抑制する
+    isProcessing = true;
+    if (!video.paused && !video.hasAttribute('data-manual-play')) {
+      video.pause();
+    }
+    isProcessing = false;
+
+    // playイベントリスナー（自動再生をブロック）
+    const handlePlay = () => {
+      if (!video.hasAttribute('data-manual-play')) {
+        isProcessing = true;
         video.pause();
+        isProcessing = false;
       }
-      
-      // playイベントを監視して自動再生をブロック
-      if (!video.hasAttribute('data-autoplay-blocked')) {
-        video.setAttribute('data-autoplay-blocked', 'true');
-        
-        // 再生イベントリスナー
-        const handlePlay = (e) => {
-          if (!video.hasAttribute('data-manual-play')) {
-            e.preventDefault();
-            video.pause();
-          }
-        };
-        
-        video.addEventListener('play', handlePlay);
-        
-        // クリックイベントで手動再生を許可
-        const enableManualPlay = () => {
-          video.setAttribute('data-manual-play', 'true');
-          video.removeEventListener('play', handlePlay);
-          // 少し遅延を入れて確実に再生
-          setTimeout(() => {
-            video.play().catch(() => {});
-          }, 50);
-        };
-        
-        // ビデオ要素への直接クリック
-        video.addEventListener('click', enableManualPlay, { once: true });
-        
-        // 再生ボタンのクリックも検出
-        const videoContainer = video.closest('[data-testid="videoPlayer"], [data-testid="videoComponent"], article');
-        if (videoContainer) {
-          // 再生ボタンを探す
-          const playButtons = videoContainer.querySelectorAll('[aria-label*="Play"], [aria-label*="再生"], [role="button"]');
-          playButtons.forEach(button => {
-            button.addEventListener('click', enableManualPlay, { once: true });
-          });
-          
-          // コンテナ全体のクリックも監視（ボタンが見つからない場合のフォールバック）
-          videoContainer.addEventListener('click', (e) => {
-            // ビデオ要素またはその親要素がクリックされた場合
-            if (e.target === video || video.contains(e.target) || e.target.closest('[data-testid*="video"]')) {
-              enableManualPlay();
-            }
-          }, { once: true });
+    };
+
+    video.addEventListener('play', handlePlay);
+
+    // クリックイベントで手動再生を許可
+    const enableManualPlay = () => {
+      video.setAttribute('data-manual-play', 'true');
+      video.removeEventListener('play', handlePlay);
+      setTimeout(() => {
+        video.play().catch(() => {});
+      }, 50);
+    };
+
+    video.addEventListener('click', enableManualPlay, { once: true });
+
+    // 再生ボタンのクリックも検出
+    const videoContainer = video.closest('[data-testid="videoPlayer"], [data-testid="videoComponent"], article');
+    if (videoContainer) {
+      const playButtons = videoContainer.querySelectorAll('[aria-label*="Play"], [aria-label*="再生"], [role="button"]');
+      playButtons.forEach(button => {
+        button.addEventListener('click', enableManualPlay, { once: true });
+      });
+
+      videoContainer.addEventListener('click', (e) => {
+        if (e.target === video || video.contains(e.target) || e.target.closest('[data-testid*="video"]')) {
+          enableManualPlay();
         }
-      }
+      }, { once: true });
     }
   });
 }
 
-// DOMの変更を監視
+// デバウンス付きでDOM変更に対応する処理
+function handleDomChanges() {
+  if (settings.twitter?.defaultFollowing !== false) {
+    switchToFollowingTab();
+  }
+  if (settings.twitter.hideRecommendations) {
+    hideRecommendations();
+  }
+  if (settings.twitter.hideTrends) {
+    hideTrends();
+  }
+  if (settings.twitter.stopAutoplay) {
+    stopAutoplay();
+  }
+}
+
+// DOMの変更を監視（デバウンス付き、SPAナビゲーション検出も統合）
 function startObserver() {
+  let lastUrl = location.href;
+
   observer = new MutationObserver(() => {
-    if (settings.twitter?.defaultFollowing !== false) {
-      switchToFollowingTab();
+    // stopAutoplay内のpause()による再発火を防止
+    if (isProcessing) return;
+
+    // SPAナビゲーション検出
+    const url = location.href;
+    if (url !== lastUrl) {
+      lastUrl = url;
+      // ナビゲーション時は少し待ってから適用
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (settings) applyRestrictions();
+      }, 500);
+      return;
     }
-    if (settings.twitter.hideRecommendations) {
-      hideRecommendations();
-    }
-    if (settings.twitter.hideTrends) {
-      hideTrends();
-    }
-    if (settings.twitter.stopAutoplay) {
-      stopAutoplay();
-    }
+
+    // デバウンス: 連続するDOM変更をまとめて1回だけ処理
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(handleDomChanges, 200);
   });
-  
+
   observer.observe(document.body, {
     childList: true,
     subtree: true
@@ -396,16 +415,4 @@ setInterval(() => {
   }
 }, 60000); // 1分ごとにチェック
 
-// SPAのナビゲーションを検出
-let lastUrl = location.href;
-new MutationObserver(() => {
-  const url = location.href;
-  if (url !== lastUrl) {
-    lastUrl = url;
-    setTimeout(() => {
-      if (settings) {
-        applyRestrictions();
-      }
-    }, 500);
-  }
-}).observe(document, { subtree: true, childList: true });
+// SPAナビゲーション検出は startObserver() に統合済み
